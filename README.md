@@ -4,6 +4,7 @@ A tap for proto3 (PRERELEASE).
 
 Currently supported compilers:
 
+* C++ (bundled)
 * Python
 * Go
 
