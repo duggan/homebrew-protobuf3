@@ -1,13 +1,34 @@
 # Protocol Buffers 3
 
-A tap for proto3.
+A tap for proto3 (PRERELEASE).
 
-Currently supports the Python compiler only.
+Currently supported compilers:
+
+* Python
+* Go
 
 ## Installation
 
-`brew tap duggan/protobuf3`
+This is a PRERELEASE so the commands are a little more verbose to make sure you know what you're doing.
 
-`brew install protobuf3python`
+Add the tap:
+```
+λ brew tap duggan/protobuf3
+```
 
-If you already have protocol buffers installed, you will need to run `brew link --overwrite protobuf3python` to use the new version.
+Run the install (add / remove flags for desired support):
+```
+λ brew install --HEAD protobuf3 --with-python --with-go`
+```
+
+Link it up:
+```
+λ brew link protobuf3
+```
+
+If you already have protocol buffers installed, you will need to run:
+
+```
+λ brew unlink protobuf
+λ brew link protobuf3
+```

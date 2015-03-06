@@ -1,4 +1,5 @@
-require 'formula'
+require "formula"
+require "language/go"
 
 class OldOrNoDateutilUnlessGoogleApputils < Requirement
   # https://github.com/Homebrew/homebrew/issues/32571
@@ -34,16 +35,33 @@ class OldOrNoDateutilUnlessGoogleApputils < Requirement
   end
 end
 
-class Protobuf3python < Formula
+class Protobuf3 < Formula
   homepage 'https://developers.google.com/protocol-buffers/'
-  url 'https://github.com/google/protobuf/releases/download/v3.0.0-alpha-2/protobuf-python-3.0.0-alpha-2.tar.gz'
-  sha1 'f1966e9764cea5e31a6865eb41f91ee4be54b87a'
+
+  head do 
+    url 'https://github.com/google/protobuf.git'
+    depends_on "libtool"
+    depends_on "autoconf"
+    depends_on "automake"
+  end
 
   keg_only 'Conflicts with protobuf in main repository.'
 
   option :universal
+  option :cxx11
 
-  depends_on OldOrNoDateutilUnlessGoogleApputils
+  option "with-python", "Build with Python support."
+  option "with-go", "Build with Go support."
+
+  depends_on :python => :optional
+  depends_on OldOrNoDateutilUnlessGoogleApputils if build.with? "python"
+
+  if build.with? "go"
+    depends_on "go" => :build
+    go_resource "github.com/golang/protobuf" do
+      url "https://github.com/golang/protobuf.git", :revision => "c22ae3cf020a21ebb7ae566dccbe90fc8ea4f9ea"
+    end
+  end
 
   fails_with :llvm do
     build 2334
@@ -55,21 +73,44 @@ class Protobuf3python < Formula
     # http://code.google.com/p/protobuf/source/browse/trunk/configure.ac#61
     ENV.prepend 'CXXFLAGS', '-DNDEBUG'
     ENV.universal_binary if build.universal?
+    system "./autogen.sh"
     system "./configure", "--disable-debug", "--disable-dependency-tracking",
                           "--prefix=#{prefix}",
                           "--with-zlib"
     system "make"
     system "make install"
 
+    if build.with? "go"
+      ENV["GOPATH"] = buildpath
+      host = "github.com"
+      org_name = "golang"
+      repo_name = "protobuf"
+
+      gopath = "src/#{host}/#{org_name}/#{repo_name}"
+
+      mkdir_p buildpath/"#{gopath}"
+      ln_s buildpath, buildpath/"#{gopath}"
+
+      Language::Go.stage_deps resources, buildpath/"src/"
+
+      bin_name = "protoc-gen-go"
+      cd "src/#{host}/#{org_name}/#{repo_name}/#{bin_name}" do
+        system "go", "build", "-o", bin_name
+        bin.install bin_name
+      end
+    end
+
     # Install editor support and examples
     doc.install %w( editors examples )
-  
-    chdir "python" do
-      ENV.append_to_cflags "-I#{include}"
-      ENV.append_to_cflags "-L#{lib}"
-      system "python", "setup.py", "build"
-      system "python", "setup.py", "install", "--cpp_implementation", "--prefix=#{prefix}",
-             "--single-version-externally-managed", "--record=installed.txt"
+ 
+    if build.with? "python"
+      chdir "python" do
+        ENV.append_to_cflags "-I#{include}"
+        ENV.append_to_cflags "-L#{lib}"
+        system "python", "setup.py", "build"
+        system "python", "setup.py", "install", "--cpp_implementation", "--prefix=#{prefix}",
+               "--single-version-externally-managed", "--record=installed.txt"
+      end
     end
   end
 
