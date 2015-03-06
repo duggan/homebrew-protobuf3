@@ -18,7 +18,7 @@ Add the tap:
 
 Run the install (add / remove flags for desired support):
 ```
-λ brew install --HEAD protobuf3 --with-python --with-go`
+λ brew install --HEAD protobuf3 --with-python --with-go
 ```
 
 Link it up:
